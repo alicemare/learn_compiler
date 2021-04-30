@@ -64,61 +64,6 @@ ldr r3, [r1, +r0, lsl #2]
 
 
 
-3、交换Phi的两个操作数，使得常数变量在后边
-
-```bash
-1c1
-< >>>>>>>>>>>> After pass 11SimplifyCFG <<<<<<<<<<<<
----
-> >>>>>>>>>>>> After pass 15RefactorPartIns <<<<<<<<<<<<
-54,55c54,55
-<     i32 %23  = PHI i32 7 <label> %entry i32 %20 <label> %18
-<     i32 %24  = PHI i32 5 <label> %entry i32 %8  <label> %18 
----
->     i32 %23  = PHI i32 %20 <label> %18 i32 7 <label> %entry 
->     i32 %24  = PHI i32 %8  <label> %18 i32 5 <label> %entry 
-```
-
-为什么要这么做，看汇编
-
-寄存器分配的结果是%23在REG0，%24在REG1
-
-```assembly
-.doubleWhile_entry_branch_1:
-    @ %23 <= 
-    @ %24 <= 
-    mov r0, #7
-    mov r1, #5
-    @ branch instruction eliminated
-.doubleWhile_3:
-    @ i32 %23  = PHI i32 %20 <label> %18 i32 7 <label> %entry 
-    @ i32 %24  = PHI i32 %8 <label> %18 i32 5 <label> %entry 
-    @ Br LT i32 %24 i32 100 <label> %6 <label> %21 
-    cmp r1, #100
-    bge .doubleWhile_21+0
-.doubleWhile_3_branch_1:
-    @ branch instruction eliminated
-.doubleWhile_3_branch_2:
-    @ branch instruction eliminated
-```
-
-对于不是常数的PHI操作数
-
-```assembly
-.doubleWhile_18:
-    @ i32 %20  = Sub i32 %25 i32 100 
-    sub r0, r0, #100
-    @ Br <label> %3 
-.doubleWhile_18_branch_1:
-    @ %23 <= %20
-    @ %24 <= %8
-    b .doubleWhile_3+0
-```
-
-实际上20和23同寄存器，8和24同寄存器，所以不需要赋值操作，只需要跳转
-
-
-
 ### 循环不变量
 
 #### 查找
