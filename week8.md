@@ -186,11 +186,11 @@ BranchInst::createBr(loopBase, newBB);	// 在newBB中创建到loopBase的Branch
 
 外提前
 
-![](./assert/reportweek8/preloopinva.svg)
+![](./assert/week8/preloopinva.svg)
 
 外提后
 
-![](./assert/reportweek8/postloopinva.svg)
+![](./assert/week8/postloopinva.svg)
 
 ### 创新多线程框架
 
@@ -237,7 +237,7 @@ while (i<n){
 
 插入多线程部分之前
 
-![](./assert/reportweek8/0.svg)
+![](./assert/week8/0.svg)
 
 插入之后：
 
@@ -252,7 +252,7 @@ while (i<n){
 
 
 
-![](./assert/reportweek8/1.svg)
+![](./assert/week8/1.svg)
 
 
 
@@ -294,7 +294,7 @@ define @main()
 
 
 
-![](assert\reportweek8\asm.svg)
+![](assert\week8\asm.svg)
 
 基本寄存器对照表
 

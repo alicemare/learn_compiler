@@ -1,0 +1,29 @@
+% !TeX root = ../main.tex
+
+\ustcsetup{
+  keywords = {
+    编译, 编译器设计, 编译原理, 编译优化
+  },
+  keywords* = {
+    Compile,  Compiler Design, Compile Principles, Compile Optimization
+  },
+}
+
+\begin{abstract}
+ 为了更深入的学习编译原理，并了解编译器的设计和实现，本文就2020年首届全国大学生计算机系统能力大赛编译系统设计赛的特等奖项目“燃烧我的编译器”的源代码进行了阅读。
+ 
+ 该项目代码量大，设计巧妙，表述简洁清晰，实现了编译优化领域的大量经典优化算法，是一个类\ LLVM\ 实现方式的简单\ C\ 语言子集编译器设计的模范，同时本项目不失创新，在图染色的寄存器分配算法和循环多线程部分有很大自主性创意，这些亮点值得分析和研究。
+
+本文就项目中实现的各种优化分析算法如控制流图简化，半剪枝法构造静态单赋值形式，Tarjen算法计算强连通分量实现循环查找，改进的启发式图染色法分配寄存器和其他创新部分进行了阅读和分析，并辅佐以实例来更好的解释说明，是对比赛代码的详细分析和总结。
+
+\end{abstract}
+
+\begin{abstract*}
+
+In order to learn more about compile principles used in compiler design and implementation, in this paper the writer reads the source code of project "Flamming My Compiler", the grand prize project in the compiler system design competition of the First National Computer Systems Competitiveness Competition in 2020.
+ 
+ This project has a amount of source code, and the design of project is simple with concise and clear construction. It implements a large number of classical optimization algorithms in the field of compilation and optimization, and is a model of simple compiler design for a subset of C programming language like LLVM. At the same time, the project is innovative and has a lot of independent creativity, for example, in the graph coloring algorithm of register allocation and the original multithreading framework, which both are worth analyzing and studying.
+
+In this paper, the writer analyze various optimization analysis algorithms implemented in the project such as control flow graph simplification, semi-pruning method to construct static single assignment forms, Tarjen's algorithm to compute strongly connected components to achieve loop find, improved heuristic graph staining method to allocate registers and other innovative parts, supplemented with examples to better explain and illustrate. This article is a detailed analysis and summary of the competition code.
+
+\end{abstract*}
