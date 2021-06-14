@@ -260,29 +260,29 @@ define @main()
 ```assembly
 __mtstart:
     movw r11, #0
-    movt r11, #256 				@ r11 = (256<<16) | 0
+    movt r11, #256 		@ r11 = (256<<16) | 0
     sub sp, sp, r11
     push {r0, r1, r2, r3}
-    mov r3, r7					@ 保留r7到r3
-    mov r2, #4					@ thread numbers: 4
+    mov r3, r7			@ 保留r7到r3
+    mov r2, #4			@ thread numbers: 4
 .__mtstart_1:
-    sub r2, r2, #1				@ tid - 1
+    sub r2, r2, #1		@ tid - 1
     cmp r2, #0
     beq .__mtstart_2+0			
-    mov r7, #120				@ system call: clone
-    mov r0, #273				@ clone_flags
-    mov r1, sp					@ 线程之间共享栈空间
-    swi #0
-    cmp r0, #0					@ child theard ?
-    bne .__mtstart_1+0			@ 父进程会继续clone子进程
+    mov r7, #120		@ system call: clone
+    mov r0, #273		@ clone_flags: child_process
+    mov r1, sp			@@@@ 线程之间共享栈空间 @@@@
+    swi #0			@ sys_call
+    cmp r0, #0			@ child theard ?
+    bne .__mtstart_1+0		@ 父进程会继续clone子进程
 .__mtstart_2:
-    mov r10, r2					@ 保存当前r2(tid)到r10用于返回
-    mov r7, r3					@ 恢复r7
+    mov r10, r2			@ 保存当前r2(tid)到r10用于返回
+    mov r7, r3			@ 恢复r7
     pop {r0, r1, r2, r3}
     movw r11, #0
     movt r11, #256
     add sp, sp, r11
-    mov pc, lr					@ return
+    mov pc, lr			@ return
 ```
 
 mtend
