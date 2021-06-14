@@ -133,7 +133,7 @@ $$
 
 \begin{figure}[htb]
   \centering
-  \includegraphics[width=0.6\textwidth]{figures/reg_alloc.pdf}
+  \includegraphics[width=0.4\textwidth]{figures/reg_alloc.pdf}
   \caption{在块内执行寄存器分配的示例}
   \label{fig:regAlloc}
   \note{注：LIVE-IN表示经过数据流分析后，在该基本块需要的变量，LIVE-OUT表示数据流分析中，在该基本块之后仍然被需要的变量。}
@@ -147,30 +147,23 @@ $$
   \includegraphics[width=0.8\textwidth]{figures/reg_live_range.pdf}
   \caption{图~\ref{fig:regAlloc}中的虚拟变量关于指令次序的存活期}
   \label{fig:regAllocLiveRange}
-  \note{注：横轴代表了程序的指令执行次序，纵轴代表了虚拟变量，在程序执行到任意时刻作一条平行于纵轴的直线，穿过的变量即此刻互相冲突的变量，冲突的变量任何时刻都不应该被分配到同一寄存器上。}
 \end{figure}
 
-变量\%1和\%2： 由于\%1在出口处不活跃，所以只需要从活跃到最后一条使用\%1的指令，即第三条指令处；变量\%2 与之类似。
-
-变量\%3,\%4和\%5，这些变量都在出口处活跃，所以他们的活跃期应该是自赋值指令起，到基本块的。
-
-变量\%6属于基本块内定义的变量，而且不在出口处活跃，所以只需要从定义处活跃到最后一次使用\%6的指令，即第四条指令处.
-
-变量\%10同时在入口处和出口处活跃，因而在寄存器充分的情况下可以将其一直保留在寄存器中，否则，至少需要一对存取操作。
+对于变量\%1和\%2，由于\%1在出口处不活跃，所以只需要从活跃到最后一条使用\%1的指令，即第三条指令处；变量\%2 与之类似；变量\%3,\%4和\%5，这些变量都在出口处活跃，所以他们的活跃期应该是自赋值指令起，到基本块的；变量\%6属于基本块内定义的变量，而且不在出口处活跃，所以只需要从定义处活跃到最后一次使用\%6的指令，即第四条指令处；变量\%10同时在入口处和出口处活跃，因而在寄存器充分的情况下可以将其一直保留在寄存器中，否则，至少需要一对存取操作。
 
 由此，自上而下的分析每条指令，该指令的左值应该与此时所有活跃的变量冲突，构建得到冲突图，如图~\ref{fig:graph0}。
 
 \begin{figure}[htb]
   \centering
-  \includegraphics[width=0.35\textwidth]{figures/graph.png}
+  \includegraphics[width=0.3\textwidth]{figures/graph.png}
   \caption{冲突图}
   \label{fig:graph0}
 \end{figure}
-按照算法，逐个把度数最小的节点入栈，这些度数小于k的节点一定可以k染色（k是可用颜色数，现假定为4种颜色：红黄蓝绿）。节点5的度数为3，将其入栈，得到图~\ref{fig:graph1}。
+按照算法，逐个把度数最小的节点入栈，这些度数小于k的节点一定可以染色。节点5的度数为3，将其入栈，得到图~\ref{fig:graph1}。
 
 \begin{figure}[htb]
   \centering
-  \includegraphics[width=0.35\textwidth]{figures/graph1.png}
+  \includegraphics[width=0.3\textwidth]{figures/graph1.png}
   \caption{删去节点5}
   \label{fig:graph1}
 \end{figure}
@@ -179,7 +172,7 @@ $$
 
 \begin{figure}[htb]
   \centering
-  \includegraphics[width=0.35\textwidth]{figures/graph2.png}
+  \includegraphics[width=0.3\textwidth]{figures/graph2.png}
   \caption{删去节点4}
   \label{fig:graph2}
 \end{figure}
@@ -188,11 +181,9 @@ $$
 
 \begin{figure}[htb]
   \centering
-  \includegraphics[width=0.35\textwidth]{figures/graph3.png}
+  \includegraphics[width=0.3\textwidth]{figures/graph3.png}
   \caption{删去节点3}
   \label{fig:graph3}
 \end{figure}
 
 因为我们有4个可用寄存器，因此这些节点都可以被染色，不妨按照红黄蓝绿的次序给节点1，2，6，10分别染色，依次弹出栈中元素3，4，5。对之前弹出的节点进行染色，节点3与节点6，10冲突，因此可选颜色为红色或黄色，不妨假定为红色；节点4与3，6，10冲突，只能为黄色；节点5与3，4，10冲突，只能为蓝色，至此一种4染色的方案就完成了。
-
-回到图4.6中的完全图，如果可用寄存器数目k是3呢？那么此时无论如何都不可能对该4-完全图进行3染色，只能选择合适的节点抛出。

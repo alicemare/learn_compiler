@@ -119,7 +119,7 @@ Tarjen算法的核心在strongconnect函数，该函数的算法流程是，接�
 
 \begin{figure}[htb]
   \centering
-  \includegraphics[width=0.5\textwidth]{figures/cfg.pdf}
+  \includegraphics[width=0.3\textwidth]{figures/cfg.pdf}
   \caption{程序控制流程图}
   \label{fig:dfs}
 \end{figure}
@@ -202,21 +202,7 @@ k = step;
 // use of variable k
 \end{verbatim}
 
-如果我们外提时没有添加if，那么编译器会错误的产生一个新赋值 step = 4，这将使得下方的 k 出错！
-
-\begin{verbatim}
-int n = 10;
-int i = 1;
-int step = 0;
-// if (i>n)
-    int step = 4*i;
-while (i > n){ 
-	// code
-}
-k = step;   // ERROR HERE
-// use of variable k
-
-\end{verbatim}
+如果我们外提时没有添加if，那么编译器会错误的产生一个新赋值 step = 4，这将使得下方对 k 的赋值出错。
 
 事实上，这种情况是不会发生的，因为对于SSA形式，每个变量只有一次被赋值的机会，出现在循环内的赋值就意味着不会再出现对此变量的其他赋值语句，经过外提后只有用得上或者用不上两种情况，而不会产生上述的覆盖出错。
 
@@ -224,7 +210,7 @@ k = step;   // ERROR HERE
 
 \begin{figure}[htb]
   \centering
-  \includegraphics[width=0.8\textwidth]{figures/codeMotion.pdf}
+  \includegraphics[width=0.7\textwidth]{figures/codeMotion.pdf}
   \caption{直接从源代码得到的控制流程图}
   \label{fig:motion0}
 \end{figure}
@@ -235,7 +221,7 @@ k = step;   // ERROR HERE
 
 \begin{figure}[htb]
   \centering
-  \includegraphics[width=0.9\textwidth]{figures/codeMotion_phi.pdf}
+  \includegraphics[width=0.7\textwidth]{figures/codeMotion_phi.pdf}
   \caption{符合静态单赋值要求的控制流程图}
   \label{fig:motion1}
 \end{figure}
@@ -244,7 +230,7 @@ k = step;   // ERROR HERE
 
 \begin{figure}[htb]
   \centering
-  \includegraphics[width=0.8\textwidth]{figures/post_codeMotion.pdf}
+  \includegraphics[width=0.7\textwidth]{figures/post_codeMotion.pdf}
   \caption{进行代码外提后的控制流程图}
   \label{fig:motion2}
 \end{figure}
@@ -254,7 +240,7 @@ k = step;   // ERROR HERE
 
 \section{循环多线程化}
 
-\subsection{简介}
+\subsection{多线程框架简介}
 
 本项目对于最简单的并行计算情况，利用了树莓派ARM EABI 架构的4核处理器，开发了创新多线程框架，与经典框架 OpenMP 对比，其优点有：
 
@@ -266,11 +252,26 @@ k = step;   // ERROR HERE
 
 4.更高的运行性能：栈上的资源仍然可以直接通过栈指针加偏移访问
 
+本Pass的run方法会调用两个功能：find 与 wrap，find会找到每个最内循环的最外层循环，然后检查这个嵌套循环能否MultiThreading化，能满足多线程化的最外层循环应该是循环变量从开始值start，每次迭代递增step直到结束值end的形式，同时最外层循环无数据相关。wrap表示包装部分：在循环的条件Block之前插入基本块调用MTSTART，在更新迭代变量的之前插入基本块调用MTEND，前者用于创建4个线程开始并行执行，后者结束并行线程部分。
+
 本项目的多线程框架类似于GPU的设计思想，仅针对不需要线程通信的情况，即每个线程之间互相不会产生干扰，彼此读写属于自己的区域，这也是上文所述线程之间可以共享栈中的局部变量，而不需要互斥锁等同步机制的原因。
 
 举例来说，对规模为100的数组A的每个元素进行平方运算，由于这个问题可以划分为4个独立进行互不干扰的子问题，编译器可以通过系统调用创建4个线程并行独立地共同完成这个问题：一号线程读写前25个元素，二号线程读写26到50个元素，以此类推，从而充分利用树莓派的4核处理器，进一步提高机器码性能。
 
 \subsection{多线程框架代码实现}
+\label{anchor}
+
+以如下案例说明，A和B是两个数组，i是循环迭代变量，循环左边界为0，右边界为n，n是一个正整数。
+\begin{verbatim}
+    i = 0;
+    while (i < n){
+	    A[i] = A[i] + B[i];
+	    i = i + 1;
+    }
+\end{verbatim}
+
+
+\subsubsection{MTSTART}
 
 下面介绍如何在ARM EABI Linux的系统上通过汇编码创建共享栈空间的子线程。
 
@@ -298,8 +299,67 @@ clone对父进程返回所创建的子进程的pid，如果失败，返回-1，�
 
 第四条指令为设置系统调用参数号为120，即clone的系统调用号。
 
-第五条指令表示设置系统调用的首个参数clone\_flags，273的十六进制即0x0111，在Linux系统代码中表示共享虚拟存储的子进程，显然由于SysY中无无文件读写等功能，所以只需共享最基本的虚存空间即可。
+第五条指令表示设置系统调用的首个参数clone\_flags，273的十六进制即0x0111，高16位的0x11在Linux系统代码中表示共享虚拟存储的子进程，低16位的0x11告诉系统这是一个子进程。显然由于SysY中无无文件读写等功能，所以只需共享最基本的虚存空间即可。
     
 第六条指令中，由于系统调用clone的参数r1为子线程栈地址，通常框架下子线程拥有自己独立的栈空间来存储自己的局部变量，并且防止误写父线程的局部变量，但是该项目的多线程框架下无需担心此问题，所以只需要把子线程的栈指针设置为父线程的栈指针sp即可。
 
 第七条swi \#0是arm EABI的软中断指令，类似x86的int 0x80。从这条指令之后，父子线程会开始并行执行，为了区分父子线程，利用上文提到的clone对父子线程返回的值r0不同：对子线程返回0，子线程会顺序执行，离开子线程创建的汇编代码区域；对父线程返回子线程pid，Linux下的创建成功pid是一个非负整数，因而必然会导致父线程回到第一条指令，对r2减一，判断所有子线程是否已经创建完毕。
+
+\subsubsection{MTEND}
+MTEND较为简单，恢复之前MTSTART压栈保存的寄存器或变量，并使父线程循环4次，子线程调用系统调用: exit结束执行。整个程序回到单线程模式。
+\begin{verbatim}
+    .__mtend_1:				    ; child thread area:
+    mov r7, #1					; sys_call: exit
+    swi #0
+\end{verbatim}
+
+\subsection{案例}
+以第三节第\ref{anchor}段的while循环为例进行说明，while循环在经过IR优化之后结果为：
+
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=0.8\textwidth]{figures/mt0.pdf}
+  \caption{while循环的IR表示}
+  \label{fig:mt0}
+\end{figure}
+
+其中基本块label\_entry是声明i，n和数组A，B，从标准IO中读取数组元组，label\_13进行循环条件判断，label\_17完成while循环体，label\_32是整个流程图的退出基本块。
+
+经过多线程部分后，得到的流程图如下：
+
+\begin{figure}[htb]
+  \centering
+  \includegraphics[width=0.8\textwidth]{figures/mt1.pdf}
+  \caption{while循环的多线程框架表示}
+  \label{fig:mt1}
+\end{figure}
+
+新加入基本块MultithreadBegin0表示由该Pass插入的基本块，负责调用上文介绍的MTSTART，并把该调用的返回值: 子线程的线程序号（从0递增至3，其中0号是父线程）保存在虚拟寄存器\%37中。
+
+从虚拟寄存器\%38到\%48负责通过这个返回值计算每个子线程该被分配的任务起始和结束地址。具体而言，对该while循环案例，中间变量的虚拟寄存器和它们的作用如表~\ref{tab:mt}所述：
+
+\begin{table}[htb]
+  \centering\small
+  \caption{MTSTART部分虚拟寄存器的作用说明}
+  \label{tab:mt}
+  \begin{tabular}{lcl}
+    \toprule
+    virtual REG   & value  & 介绍\\
+    \midrule
+    \%37 & tid & 多线程号\\
+    \%38 & n &  问题规模\\
+    \%44 & (n*(tid+1))/4 + start & 子线程迭代左边界\\
+    \%48 & (n*tid)/4  + start & 子线程迭代变量初始值\\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+经过该基本块中CALL \_\_mtstart调用后进入并行执行部分。各个子线程计算它们独自的任务区域，然后彼此独立的同时对数组A进行读写，在基本块MultithreadEnd0中，通过系统调用回收子线程，多线程部分结束。
+
+\subsection{多线程框架约定}
+
+在MTSTART和MTEND之间的部分，局部变量被保存在虚拟寄存器中，线程级的切换确保了各个线程在执行时有一套彼此独立的通用寄存器（除了状态寄存器csr和都相同栈指针寄存器sp），而正因如此，局部变量在寄存器分配环节时如果因为物理寄存器数量不够而不得不使用Load / Store的方法将其放置在栈空间时，因为各个线程之间共享栈空间，这就会导致读写sp指针覆盖问题而出错。因此，局部变量在因物理寄存器数量不够而弹出（spill）到栈空间时，需要为各个线程设置独立的栈空间地址来存储这些被spill的局部变量。
+
+而在多线程框架内部，“局部”数组是彼此共享的，如第三节第\ref{anchor}段中的数组A，数组A创建早于MTSTART的调用，因此被存储在栈上，而各个线程栈指针共享，因此每个线程都可以访问到局部数组A，并且由于每个局部变量对数组的起始和结束地址的界定都不同，因此它们可以同时并发的读写该数组，实现多线程。
+
+为了简单和降低开销，本项目要求多线程部分不能有函数调用，因此创新多线程框架四用于并行区域较小，物理寄存器分配不会有溢出，无函数调用的简情况。
